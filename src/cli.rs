@@ -7,5 +7,6 @@ use clap::Parser;
 #[command(propagate_version = true)]
 pub struct Cli {
     /// The path to the config
+    #[arg(short, long)]
     pub config_path: PathBuf,
 }
