@@ -30,11 +30,11 @@ mod config;
 mod webview;
 mod window;
 
-const POS_X: AtomicI32 = AtomicI32::new(0);
-const POS_Y: AtomicI32 = AtomicI32::new(0);
-const WIDTH: AtomicI32 = AtomicI32::new(200);
-const HEIGHT: AtomicI32 = AtomicI32::new(20);
-const CONTENT_URL: AtomicBool = AtomicBool::new(false);
+static POS_X: AtomicI32 = AtomicI32::new(0);
+static POS_Y: AtomicI32 = AtomicI32::new(0);
+static WIDTH: AtomicI32 = AtomicI32::new(200);
+static HEIGHT: AtomicI32 = AtomicI32::new(20);
+static CONTENT_URL: AtomicBool = AtomicBool::new(false);
 
 lazy_static! {
     static ref CONTENT: Arc<Mutex<String>> = Arc::new(Mutex::new(String::new()));
