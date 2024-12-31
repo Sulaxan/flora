@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <style>
+        body {
+            margin: 0px 2px;
+            /* catppuccin macchiato base */
+            background-color: #24273a;
+            /* catppuccin macchiato blue */
+            color: #8aadf4;
+            font-family: "JetBrainsMonoNL NFM", Arial, sans-serif;
+            font-size: 10pt;
+            /* prevent selection */
+            user-select: none;
+            /* hide scrollbar */
+            overflow: hidden;
+        }
+
+        #time:hover {
+            color: #b7bdf8;
+        }
+    </style>
+
+    <script type="text/javascript" defer>
+        window.onload = () => {
+            const elem = document.getElementById("time");
+            setInterval(() => {
+                const date = new Date();
+                elem.innerText = date.toLocaleString().toUpperCase();
+            }, 1000);
+        }
+
+        function copyTime() {
+            const date = new Date();
+            const toCopy = date.toLocaleString().toUpperCase();
+            navigator.clipboard.writeText(toCopy);
+        }
+    </script>
+</head>
+
+<body>
+    <div id="time" onclick="copyTime()">Loading Time...</div>
+</body>
+
+</html>

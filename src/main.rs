@@ -1,9 +1,6 @@
-use std::{
-    fs::File,
-    sync::{
-        atomic::{AtomicBool, AtomicI32, Ordering},
-        Arc, Mutex,
-    },
+use std::sync::{
+    atomic::{AtomicBool, AtomicI32, Ordering},
+    Arc, Mutex,
 };
 
 use anyhow::{anyhow, Result};
