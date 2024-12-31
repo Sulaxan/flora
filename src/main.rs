@@ -76,6 +76,8 @@ fn main() -> Result<()> {
     };
     let content_url = CONTENT_URL.load(Ordering::SeqCst);
 
+    let _ = unsafe { SetConsoleCtrlHandler(Some(ctrl_c_handler), true).ok() };
+
     unsafe {
         CoInitializeEx(None, COINIT_APARTMENTTHREADED).ok()?;
     }
@@ -94,8 +96,6 @@ fn main() -> Result<()> {
         let mut sender = WEBVIEW_SENDER.lock().unwrap();
         *sender = Some(webview.get_sender());
     }
-
-    let _ = unsafe { SetConsoleCtrlHandler(Some(ctrl_c_handler), true).ok() };
 
     webview
         .run()
