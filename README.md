@@ -9,7 +9,8 @@ your own. This repo has some examples to get you started if you decide to make y
 `flora` is essentially a browser that displays your widgets. In fact, the window has an embedded
 webview that uses Edge (Chromium) to display what is essentially webpages.
 
-> ![WARNING]
+> [!WARNING]
+>
 > `flora` is still rough around the edges. Though it _does_ work, it still needs some convenience
 > features for a better user experience. Expect some issues to popup if you decide to use it.
 
@@ -69,7 +70,7 @@ You can find configuration details below.
 anything as long as it has the `.flora` extension.
 
 The config file uses lisp-like syntax (S-expressions), and the configuration options are quite
-straightforward. A full list of options is specified in the [docs](docs/).
+straightforward. A full list of options is specified in the [docs](./docs/).
 
 A minimum configuration is the following:
 
