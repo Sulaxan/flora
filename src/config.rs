@@ -11,6 +11,7 @@ pub type Config = Vec<ConfigOption>;
 #[serde(rename_all = "kebab-case")]
 pub enum ConfigOption {
     /// The position of the widget
+    #[serde(rename = "pos")]
     Position(i32, i32),
     /// The dimensions of the widget
     #[serde(rename = "dim")]

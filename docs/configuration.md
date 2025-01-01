@@ -77,7 +77,7 @@ Below is a list of all options you can specify in the configuration file:
 
 | Option                 | Description                                                                    |
 | ---------------------- | ------------------------------------------------------------------------------ |
-| (position _x_ _y_)     | Sets the position of the widget window. Must be a valid bound for your screen. |
+| (pos _x_ _y_)          | Sets the position of the widget window. Must be a valid bound for your screen. |
 | (dim _width_ _height_) | Sets the dimensions of the window.                                             |
 | (content _string_)     | Sets the content to display. Either HTML or a URL.                             |
 | (content-url)          | Indicates that `content` should be treated as a URL.                           |
