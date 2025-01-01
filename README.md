@@ -2,9 +2,9 @@
 
 A Windows 10/11 Widget Daemon
 
-`flora` provides the base for you to build any widget you want using HTML/CSS/JavaScript. `flora`
-does _not_ provide any widgets for you, and it's up to you to either find widgets online or write
-your own. This repo has some examples to get you started if you decide to make your own.
+`flora` provides a base for you to build any widget you want using HTML/CSS/JavaScript. `flora` does
+_not_ provide any widgets for you, and it's up to you to either find widgets online or write your
+own. This repo has some examples to get you started if you decide to make your own.
 
 `flora` is essentially a browser that displays your widgets. In fact, the window has an embedded
 webview that uses Edge (Chromium) to display what is essentially webpages.
