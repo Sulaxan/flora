@@ -19,7 +19,7 @@ webview that uses Edge (Chromium) to display what is essentially webpages.
 ### Installing
 
 `flora` is still in an early state, and as such must be compiled from source. To compile, you will
-need `rust`, you can find details about installing rust here: https://www.rust-lang.org/tools/install
+need Rust; you can find details about installing Rust here: https://www.rust-lang.org/tools/install
 
 After cloning the repository, simply run:
 
