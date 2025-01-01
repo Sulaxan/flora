@@ -34,7 +34,8 @@ static HEIGHT: AtomicI32 = AtomicI32::new(20);
 static CONTENT_URL: AtomicBool = AtomicBool::new(false);
 
 lazy_static! {
-    static ref CONTENT: Arc<Mutex<String>> = Arc::new(Mutex::new(String::new()));
+    static ref CONTENT: Arc<Mutex<String>> =
+        Arc::new(Mutex::new(include_str!("../default.html").to_string()));
 }
 
 lazy_static! {
