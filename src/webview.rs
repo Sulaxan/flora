@@ -1,6 +1,6 @@
 //! Creates and manages webviews.
 //!
-//! A lot of this code comes from the webview2-rs sample, but with some modifications for our need:
+//! A lot of this code comes from the webview2-rs sample, but with some modifications for our needs:
 //! https://github.com/wravery/webview2-rs/blob/main/crates/webview2-com/examples/sample.rs
 use std::{cell::RefCell, collections::HashMap, fmt, mem, ptr, rc::Rc, sync::mpsc};
 

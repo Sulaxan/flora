@@ -36,9 +36,7 @@ static CONTENT_URL: AtomicBool = AtomicBool::new(false);
 lazy_static! {
     static ref CONTENT: Arc<Mutex<String>> =
         Arc::new(Mutex::new(include_str!("../default.html").to_string()));
-}
 
-lazy_static! {
     static ref WEBVIEW_SENDER: Arc<Mutex<Option<WebViewSender>>> = Arc::new(Mutex::new(None));
 }
 

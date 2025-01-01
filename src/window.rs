@@ -22,7 +22,7 @@ pub struct WidgetWindow {
 
 impl WidgetWindow {
     pub fn new(x: i32, y: i32, width: i32, height: i32) -> Self {
-        let class_name = w!("chronobar");
+        let class_name = w!("flora");
         let h_inst = unsafe { GetModuleHandleW(None).unwrap() };
         let mut startup_info = STARTUPINFOW {
             cb: std::mem::size_of::<STARTUPINFOW>() as u32,
@@ -44,7 +44,7 @@ impl WidgetWindow {
             CreateWindowExW(
                 WS_EX_TOOLWINDOW | WS_EX_LAYERED,
                 class_name,
-                w!("chronobar"),
+                w!("flora"),
                 WS_POPUP | WS_VISIBLE,
                 x,
                 y,
