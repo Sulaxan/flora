@@ -7,7 +7,8 @@ use anyhow::{anyhow, Result};
 use clap::Parser;
 use cli::{FloraCli, FloraSubcommand};
 use lazy_static::lazy_static;
-use webview::{WebView, WebViewSender};
+use tabled::{builder::Builder, settings::Style};
+use webview::WebViewSender;
 use window::WidgetWindow;
 use windows::Win32::{
     Foundation::BOOL,
@@ -24,6 +25,7 @@ use windows::Win32::{
 mod cli;
 mod color;
 mod config;
+mod process;
 mod webview;
 mod window;
 
@@ -99,6 +101,43 @@ fn main() -> Result<()> {
             config::load_config(config);
 
             return start();
+        }
+        FloraSubcommand::List => {
+            let processes = process::get_all_flora_processes();
+            if processes.is_empty() {
+                println!("There are currently no flora processes");
+                return Ok(());
+            }
+
+            let mut table_display: Vec<Vec<String>> = processes
+                .iter()
+                .map(|process| {
+                    vec![
+                        (process.hwnd.0 as isize).to_string(),
+                        process.x.to_string(),
+                        process.y.to_string(),
+                        process.width.to_string(),
+                        process.height.to_string(),
+                    ]
+                })
+                .collect();
+            table_display.insert(
+                0,
+                vec![
+                    "HWND".to_string(),
+                    "x".to_string(),
+                    "y".to_string(),
+                    "width".to_string(),
+                    "height".to_string(),
+                ],
+            );
+
+            let mut table = Builder::from_iter(table_display.iter()).build();
+            table.with(Style::modern());
+
+            println!("Currently running flora processes:\n{}", table.to_string());
+
+            return Ok(());
         }
     }
 }

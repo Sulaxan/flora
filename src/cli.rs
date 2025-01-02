@@ -19,4 +19,6 @@ pub enum FloraSubcommand {
         #[arg(short, long)]
         config_path: PathBuf,
     },
+    /// List all flora processes
+    List,
 }

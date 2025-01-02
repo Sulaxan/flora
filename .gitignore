@@ -1,2 +1,4 @@
 /target
 *.local.flora
+*.exe
+*.WebView2/
