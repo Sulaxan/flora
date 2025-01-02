@@ -5,7 +5,7 @@ use std::sync::{
 
 use anyhow::{anyhow, Result};
 use clap::Parser;
-use cli::Cli;
+use cli::{FloraCli, FloraSubcommand};
 use lazy_static::lazy_static;
 use webview::{WebView, WebViewSender};
 use window::WidgetWindow;
@@ -39,28 +39,7 @@ lazy_static! {
     static ref WEBVIEW_SENDER: Arc<Mutex<Option<WebViewSender>>> = Arc::new(Mutex::new(None));
 }
 
-fn main() -> Result<()> {
-    let cli = Cli::parse();
-    if !cli.config_path.is_file() {
-        println!("Specified config path is not a valid file");
-        return Ok(());
-    }
-    match cli.config_path.extension() {
-        Some(ext) => {
-            if ext != "flora" {
-                println!("Config extension must be .flora");
-                return Ok(());
-            }
-        }
-        None => {
-            println!("Config extension must be .flora");
-            return Ok(());
-        }
-    }
-
-    let config = config::read(&cli.config_path)?;
-    config::load_config(config);
-
+fn start() -> Result<()> {
     let x = POS_X.load(Ordering::SeqCst);
     let y = POS_Y.load(Ordering::SeqCst);
     let width = WIDTH.load(Ordering::SeqCst);
@@ -93,6 +72,35 @@ fn main() -> Result<()> {
     window
         .run()
         .map_err(|e| anyhow!("error running widget window: {}", e))
+}
+
+fn main() -> Result<()> {
+    let cli = FloraCli::parse();
+    match cli.command {
+        FloraSubcommand::Start { config_path } => {
+            if !config_path.is_file() {
+                println!("Specified config path is not a valid file");
+                return Ok(());
+            }
+            match config_path.extension() {
+                Some(ext) => {
+                    if ext != "flora" {
+                        println!("Config extension must be .flora");
+                        return Ok(());
+                    }
+                }
+                None => {
+                    println!("Config extension must be .flora");
+                    return Ok(());
+                }
+            }
+
+            let config = config::read(&config_path)?;
+            config::load_config(config);
+
+            return start();
+        }
+    }
 }
 
 pub fn set_process_dpi_awareness() -> Result<()> {
