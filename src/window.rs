@@ -1,7 +1,8 @@
+use anyhow::{anyhow, Result};
 use windows::{
     core::w,
     Win32::{
-        Foundation::{COLORREF, HWND},
+        Foundation::COLORREF,
         Graphics::Gdi::CreateSolidBrush,
         System::{
             LibraryLoader::GetModuleHandleW,
@@ -14,16 +15,19 @@ use windows::{
     },
 };
 
-use crate::{color::Color, webview};
+use crate::{
+    color::Color,
+    webview::{self, WebView},
+};
 
 pub struct WidgetWindow {
-    pub hwnd: HWND,
+    pub webview: WebView,
 }
 
 impl WidgetWindow {
-    pub fn new(x: i32, y: i32, width: i32, height: i32) -> Self {
+    pub fn new(x: i32, y: i32, width: i32, height: i32) -> Result<Self> {
         let class_name = w!("flora");
-        let h_inst = unsafe { GetModuleHandleW(None).unwrap() };
+        let h_inst = unsafe { GetModuleHandleW(None)? };
         let mut startup_info = STARTUPINFOW {
             cb: std::mem::size_of::<STARTUPINFOW>() as u32,
             ..Default::default()
@@ -54,14 +58,22 @@ impl WidgetWindow {
                 None,
                 h_inst,
                 None,
-            )
-            .unwrap()
+            )?
         };
 
         // SetLayeredWindowAttributes(hwnd, COLORREF(Color::Transparent.bgr()), 25, LWA_COLORKEY).ok();
 
         let _ = unsafe { ShowWindow(hwnd, SW_SHOWNORMAL) };
 
-        Self { hwnd }
+        let webview =
+            WebView::create(hwnd, false).map_err(|e| anyhow!("could not create webview: {}", e))?;
+
+        Ok(Self { webview })
+    }
+
+    pub fn run(self) -> Result<()> {
+        self.webview
+            .run()
+            .map_err(|e| anyhow!("error running webview: {}", e))
     }
 }

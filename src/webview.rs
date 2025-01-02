@@ -231,9 +231,10 @@ impl WebView {
         let webview = self.webview.as_ref();
         let content = self.content.borrow().clone();
         let content_url = *self.content_url.borrow();
-        let (tx, rx) = mpsc::channel();
 
         if !content.is_empty() {
+            let (tx, rx) = mpsc::channel();
+
             let handler =
                 NavigationCompletedEventHandler::create(Box::new(move |_sender, _args| {
                     tx.send(()).expect("send over mpsc channel");

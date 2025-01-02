@@ -36,7 +36,6 @@ static CONTENT_URL: AtomicBool = AtomicBool::new(false);
 lazy_static! {
     static ref CONTENT: Arc<Mutex<String>> =
         Arc::new(Mutex::new(include_str!("../default.html").to_string()));
-
     static ref WEBVIEW_SENDER: Arc<Mutex<Option<WebViewSender>>> = Arc::new(Mutex::new(None));
 }
 
@@ -79,23 +78,21 @@ fn main() -> Result<()> {
     }
     set_process_dpi_awareness()?;
 
-    let window = WidgetWindow::new(x, y, width, height);
-    let webview = WebView::create(window.hwnd, false)
-        .map_err(|e| anyhow!("could not create webview: {}", e))?;
+    let window = WidgetWindow::new(x, y, width, height)?;
     if content_url {
-        webview.navigate(&content);
+        window.webview.navigate(&content);
     } else {
-        webview.navigate_to_string(&content);
+        window.webview.navigate_to_string(&content);
     }
 
     {
         let mut sender = WEBVIEW_SENDER.lock().unwrap();
-        *sender = Some(webview.get_sender());
+        *sender = Some(window.webview.get_sender());
     }
 
-    webview
+    window
         .run()
-        .map_err(|e| anyhow!("error running webview: {}", e))
+        .map_err(|e| anyhow!("error running widget window: {}", e))
 }
 
 pub fn set_process_dpi_awareness() -> Result<()> {
