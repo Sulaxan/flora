@@ -1,17 +1,34 @@
 use std::mem;
 
+use lazy_static::lazy_static;
+use tokio::runtime::Runtime;
 use windows::Win32::{
     Foundation::{BOOL, HWND, LPARAM, RECT},
-    UI::WindowsAndMessaging::{EnumWindows, GetClassNameW, GetWindowRect},
+    UI::WindowsAndMessaging::{
+        EnumWindows, GetClassNameW, GetWindowRect, GetWindowThreadProcessId,
+    },
+};
+
+use crate::pipe::{
+    self,
+    protocol::{ServerRequest, ServerResponse},
 };
 
 #[derive(Debug)]
 pub struct FloraProcess {
+    pub pid: u32,
     pub hwnd: HWND,
+    pub name: String,
     pub x: i32,
     pub y: i32,
     pub width: i32,
     pub height: i32,
+}
+
+lazy_static! {
+    /// The global runtime for processes. This is used to run async tasks to retrieve information
+    /// about the currently running flora processes.
+    static ref RUNTIME: Runtime = Runtime::new().unwrap();
 }
 
 pub fn get_all_flora_processes() -> Vec<FloraProcess> {
@@ -32,16 +49,32 @@ pub unsafe extern "system" fn enum_windows_callback(hwnd: HWND, lparam: LPARAM) 
         let processes_ptr = lparam.0 as *mut Vec<FloraProcess>;
         let mut windows = Box::from_raw(processes_ptr);
 
+        let mut pid = 0;
+        GetWindowThreadProcessId(hwnd, Some(&mut pid));
+
         let mut rect = RECT::default();
         GetWindowRect(hwnd, &mut rect).ok();
 
-        windows.push(FloraProcess {
-            hwnd,
-            x: rect.left,
-            y: rect.top,
-            width: rect.right - rect.left,
-            height: rect.bottom - rect.top,
-        });
+        let response = RUNTIME.block_on(pipe::client::send(
+            &pipe::create_pipe_name(pid),
+            &ServerRequest::GetName,
+        ))
+        .unwrap();
+
+        match response {
+            ServerResponse::Name(name) => {
+                windows.push(FloraProcess {
+                    pid,
+                    hwnd,
+                    name,
+                    x: rect.left,
+                    y: rect.top,
+                    width: rect.right - rect.left,
+                    height: rect.bottom - rect.top,
+                });
+            }
+            _ => (),
+        }
         mem::forget(windows);
     }
 
