@@ -14,11 +14,17 @@ pub enum ServerRequest {
     GetName,
     /// Get the content of the widget.
     GetContent,
+    ShowWindow,
+    HideWindow,
 }
 
 /// Represents a server response
 #[derive(Debug, Serialize, Deserialize)]
 pub enum ServerResponse {
+    /// Represents an action has succeeded
+    Ok,
+    /// Represents an action has failed
+    Err(String),
     /// The name of the widget.
     Name(String),
     /// The content of the widget

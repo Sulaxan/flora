@@ -1,4 +1,4 @@
-use std::io;
+use std::{borrow::Borrow, io};
 
 use anyhow::Result;
 use tokio::{
@@ -6,7 +6,10 @@ use tokio::{
     net::windows::named_pipe::{NamedPipeServer, ServerOptions},
 };
 
-use crate::{CONTENT, NAME};
+use crate::{
+    windows_api::{self, show_window},
+    CONTENT, NAME, WEBVIEW_SENDER,
+};
 
 use super::{
     create_pipe_name,
@@ -82,6 +85,38 @@ fn handle_request(request: ServerRequest) -> ServerResponse {
         ServerRequest::GetContent => {
             let content = CONTENT.lock().unwrap();
             ServerResponse::Content(content.to_string())
+        }
+        ServerRequest::ShowWindow => {
+            let s = WEBVIEW_SENDER.lock().unwrap();
+            if let Some(sender) = s.as_ref() {
+                return sender
+                    .send(Box::new(|webview| {
+                        let hwnd = webview.parent.borrow();
+                        windows_api::show_window(*hwnd);
+                    }))
+                    .map_or_else(
+                        |e| ServerResponse::Err(format!("{e:?}")),
+                        |_| ServerResponse::Ok,
+                    );
+            }
+
+            return ServerResponse::Err("no window".to_string());
+        }
+        ServerRequest::HideWindow => {
+            let s = WEBVIEW_SENDER.lock().unwrap();
+            if let Some(sender) = s.as_ref() {
+                return sender
+                    .send(Box::new(|webview| {
+                        let hwnd = webview.parent.borrow();
+                        windows_api::hide_window(*hwnd);
+                    }))
+                    .map_or_else(
+                        |e| ServerResponse::Err(format!("{e:?}")),
+                        |_| ServerResponse::Ok,
+                    );
+            }
+
+            return ServerResponse::Err("no window".to_string());
         }
     };
 }

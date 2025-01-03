@@ -21,4 +21,20 @@ pub enum FloraSubcommand {
     },
     /// List all flora processes
     List,
+    /// Show specific or all widgets
+    Show {
+        /// Show all widgets
+        #[arg(long, action)]
+        all: bool,
+        /// The specific widget to show
+        name: Option<String>,
+    },
+    /// Hide specific or all widgets
+    Hide {
+        /// Hide all widgets
+        #[arg(long, action)]
+        all: bool,
+        /// The specific widget to hide
+        name: Option<String>,
+    },
 }

@@ -1,5 +1,6 @@
 use std::mem;
 
+use anyhow::Result;
 use lazy_static::lazy_static;
 use tokio::runtime::Runtime;
 use windows::Win32::{
@@ -14,6 +15,12 @@ use crate::pipe::{
     protocol::{ServerRequest, ServerResponse},
 };
 
+lazy_static! {
+    /// The global runtime for processes. This is used to run async tasks to retrieve information
+    /// about the currently running flora processes.
+    static ref RUNTIME: Runtime = Runtime::new().unwrap();
+}
+
 #[derive(Debug)]
 pub struct FloraProcess {
     pub pid: u32,
@@ -25,10 +32,17 @@ pub struct FloraProcess {
     pub height: i32,
 }
 
-lazy_static! {
-    /// The global runtime for processes. This is used to run async tasks to retrieve information
-    /// about the currently running flora processes.
-    static ref RUNTIME: Runtime = Runtime::new().unwrap();
+impl FloraProcess {
+    pub fn send(&self, request: ServerRequest) -> Result<ServerResponse> {
+        RUNTIME.block_on(pipe::client::send(
+            &pipe::create_pipe_name(self.pid),
+            &request,
+        ))
+    }
+
+    pub async fn send_async(&self, request: ServerRequest) -> Result<ServerResponse> {
+        pipe::client::send(&pipe::create_pipe_name(self.pid), &request).await
+    }
 }
 
 pub fn get_all_flora_processes() -> Vec<FloraProcess> {
@@ -55,11 +69,12 @@ pub unsafe extern "system" fn enum_windows_callback(hwnd: HWND, lparam: LPARAM) 
         let mut rect = RECT::default();
         GetWindowRect(hwnd, &mut rect).ok();
 
-        let response = RUNTIME.block_on(pipe::client::send(
-            &pipe::create_pipe_name(pid),
-            &ServerRequest::GetName,
-        ))
-        .unwrap();
+        let response = RUNTIME
+            .block_on(pipe::client::send(
+                &pipe::create_pipe_name(pid),
+                &ServerRequest::GetName,
+            ))
+            .unwrap();
 
         match response {
             ServerResponse::Name(name) => {

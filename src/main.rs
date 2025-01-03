@@ -1,5 +1,4 @@
 use std::{
-    rc::Rc,
     sync::{
         atomic::{AtomicBool, AtomicI32, Ordering},
         Arc, Mutex,
@@ -11,6 +10,8 @@ use anyhow::{anyhow, Result};
 use clap::Parser;
 use cli::{FloraCli, FloraSubcommand};
 use lazy_static::lazy_static;
+use pipe::protocol::{ServerRequest, ServerResponse};
+use process::get_all_flora_processes;
 use tabled::{builder::Builder, settings::Style};
 use tokio::runtime;
 use webview::WebViewSender;
@@ -34,6 +35,7 @@ mod pipe;
 mod process;
 mod webview;
 mod window;
+mod windows_api;
 
 static POS_X: AtomicI32 = AtomicI32::new(0);
 static POS_Y: AtomicI32 = AtomicI32::new(0);
@@ -158,6 +160,70 @@ fn main() -> Result<()> {
             table.with(Style::modern());
 
             println!("Currently running flora processes:\n{}", table.to_string());
+
+            return Ok(());
+        }
+        FloraSubcommand::Show { all, name } => {
+            if !all && name.is_none() {
+                println!("Please specify the --all flag or the name of a widget");
+                return Ok(());
+            }
+
+            let processes = get_all_flora_processes();
+
+            if all {
+                for process in processes {
+                    let res = process.send(ServerRequest::ShowWindow)?;
+                    if let ServerResponse::Err(e) = res {
+                        println!("Could not show widget {}: {e}\nContinuing...", process.name);
+                    }
+                }
+
+                return Ok(());
+            }
+
+            let name = name.unwrap();
+
+            if let Some(target) = processes.iter().find(|process| process.name == name) {
+                let res = target.send(ServerRequest::ShowWindow)?;
+                if let ServerResponse::Err(e) = res {
+                    println!("Could not show widget {}: {e}", target.name);
+                }
+            } else {
+                println!("Could not find the specified widget name {}", name);
+            }
+
+            return Ok(());
+        }
+        FloraSubcommand::Hide { all, name } => {
+            if !all && name.is_none() {
+                println!("Please specify the --all flag or the name of a widget");
+                return Ok(());
+            }
+
+            let processes = get_all_flora_processes();
+
+            if all {
+                for process in processes {
+                    let res = process.send(ServerRequest::HideWindow)?;
+                    if let ServerResponse::Err(e) = res {
+                        println!("Could not hide widget {}: {e}\nContinuing...", process.name);
+                    }
+                }
+
+                return Ok(());
+            }
+
+            let name = name.unwrap();
+
+            if let Some(target) = processes.iter().find(|process| process.name == name) {
+                let res = target.send(ServerRequest::HideWindow)?;
+                if let ServerResponse::Err(e) = res {
+                    println!("Could not hide widget {}: {e}", target.name);
+                }
+            } else {
+                println!("Could not find the specified widget name {}", name);
+            }
 
             return Ok(());
         }
