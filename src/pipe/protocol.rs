@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 
 /// Represents accepted actions to the server by the client.
 #[derive(Debug, Serialize, Deserialize)]
-pub enum ServerProtocol {
+pub enum ServerRequest {
     /// Get the name of the widget.
     GetName,
     /// Get the content of the widget.

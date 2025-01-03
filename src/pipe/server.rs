@@ -1,7 +1,4 @@
-use std::{
-    io,
-    sync::{Arc, Mutex},
-};
+use std::io;
 
 use anyhow::Result;
 use tokio::{
@@ -9,11 +6,10 @@ use tokio::{
     net::windows::named_pipe::{NamedPipeServer, ServerOptions},
 };
 
-use crate::{window, CONTENT};
+use crate::CONTENT;
 
-use super::protocol::{ServerRequest, ServerResponse};
+use super::{protocol::{ServerRequest, ServerResponse}, PIPE_NAME_PREFIX};
 
-const PIPE_NAME_PREFIX: &str = r"\\.\pipe\flora";
 
 pub fn start_server() -> Result<()> {
     let pid = std::process::id();
@@ -40,7 +36,7 @@ pub fn start_server() -> Result<()> {
 }
 
 async fn handle_client(client: NamedPipeServer) -> Result<()> {
-    let responses: Vec<ServerResponse> = Vec::new();
+    let mut responses: Vec<ServerResponse> = Vec::new();
     loop {
         let ready = client
             .ready(Interest::READABLE | Interest::WRITABLE)
@@ -51,7 +47,7 @@ async fn handle_client(client: NamedPipeServer) -> Result<()> {
 
             match client.try_read(&mut data) {
                 Ok(n) => {
-                    responses.push(handle_request(serde_json::from_slice(&data)?));
+                    responses.push(handle_request(serde_json::from_slice(data[0..n])?));
                 }
                 Err(e) if e.kind() == io::ErrorKind::WouldBlock => {
                     continue;
