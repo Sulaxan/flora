@@ -1,6 +1,6 @@
 use std::io;
 
-use anyhow::Result;
+use anyhow::{bail, Result};
 use tokio::{io::Interest, net::windows::named_pipe::ClientOptions};
 
 use super::protocol::{ServerRequest, ServerResponse};
@@ -33,6 +33,7 @@ pub async fn send(pipe_name: &str, request: &ServerRequest) -> Result<ServerResp
 
         if ready.is_readable() {
             match client.try_read(&mut data) {
+                Ok(0) => bail!("read half of pipe closed"),
                 Ok(n) => {
                     read_len = n;
                     break;

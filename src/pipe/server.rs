@@ -9,7 +9,7 @@ use tokio::{
 use crate::{
     execute,
     windows_api::{self},
-    CONTENT, NAME, SENDER,
+    CONTENT, NAME,
 };
 
 use super::{
@@ -49,6 +49,7 @@ async fn handle_client(client: NamedPipeServer) -> Result<()> {
             let mut data = vec![0; 1024];
 
             match client.try_read(&mut data) {
+                Ok(0) => break Ok(()),
                 Ok(n) => {
                     responses.push(handle_request(serde_json::from_slice(&data[0..n])?));
                 }
