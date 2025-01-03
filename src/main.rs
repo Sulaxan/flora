@@ -14,6 +14,8 @@ use pipe::protocol::{ServerRequest, ServerResponse};
 use process::get_all_flora_processes;
 use tabled::{builder::Builder, settings::Style};
 use tokio::runtime;
+use tracing::info;
+use tracing_subscriber::util::SubscriberInitExt;
 use window::{FloraHandle, FloraSender, FloraWindow};
 use windows::Win32::{
     Foundation::BOOL,
@@ -82,6 +84,10 @@ fn start_named_pipe_server() {
 }
 
 fn start() -> Result<()> {
+    tracing_subscriber::fmt().init();
+
+    info!("initializing flora");
+
     let _ = unsafe { SetConsoleCtrlHandler(Some(ctrl_c_handler), true).ok() };
 
     unsafe {

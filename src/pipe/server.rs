@@ -5,6 +5,7 @@ use tokio::{
     io::Interest,
     net::windows::named_pipe::{NamedPipeServer, ServerOptions},
 };
+use tracing::info;
 
 use crate::{
     execute,
@@ -17,10 +18,12 @@ use super::{
     protocol::{ServerRequest, ServerResponse},
 };
 
+#[tracing::instrument]
 pub async fn start_server() -> Result<()> {
+    info!("starting named pipe server");
     let pid = std::process::id();
-    println!("process id {pid}");
     let pipe_name = create_pipe_name(pid);
+    info!(pid, pipe_name);
     let mut server = ServerOptions::new()
         .first_pipe_instance(true)
         .create(&pipe_name)?;
