@@ -4,6 +4,7 @@ use std::{
         atomic::{AtomicBool, AtomicI32, Ordering},
         Arc, Mutex,
     },
+    thread,
 };
 
 use anyhow::{anyhow, Result};
@@ -11,10 +12,11 @@ use clap::Parser;
 use cli::{FloraCli, FloraSubcommand};
 use lazy_static::lazy_static;
 use tabled::{builder::Builder, settings::Style};
-use webview::{WebView, WebViewSender};
+use tokio::runtime;
+use webview::WebViewSender;
 use window::WidgetWindow;
 use windows::Win32::{
-    Foundation::{BOOL, HWND},
+    Foundation::BOOL,
     System::{
         Com::{CoInitializeEx, COINIT_APARTMENTTHREADED},
         Console::{SetConsoleCtrlHandler, CTRL_C_EVENT},
@@ -43,6 +45,15 @@ lazy_static! {
     static ref CONTENT: Arc<Mutex<String>> =
         Arc::new(Mutex::new(include_str!("../default.html").to_string()));
     static ref WEBVIEW_SENDER: Arc<Mutex<Option<WebViewSender>>> = Arc::new(Mutex::new(None));
+}
+
+fn start_named_pipe_server() {
+    thread::spawn(move || {
+        let rt = runtime::Runtime::new().unwrap();
+        rt.block_on(async move {
+            pipe::server::start_server().await.unwrap();
+        });
+    });
 }
 
 fn start() -> Result<()> {
@@ -74,6 +85,8 @@ fn start() -> Result<()> {
         let mut sender = WEBVIEW_SENDER.lock().unwrap();
         *sender = Some(window.webview.get_sender());
     }
+
+    start_named_pipe_server();
 
     window
         .run()
@@ -117,7 +130,9 @@ fn main() -> Result<()> {
                 .iter()
                 .map(|process| {
                     vec![
+                        process.pid.to_string(),
                         (process.hwnd.0 as isize).to_string(),
+                        process.name.clone(),
                         process.x.to_string(),
                         process.y.to_string(),
                         process.width.to_string(),
@@ -128,7 +143,9 @@ fn main() -> Result<()> {
             table_display.insert(
                 0,
                 vec![
+                    "PID".to_string(),
                     "HWND".to_string(),
+                    "name".to_string(),
                     "x".to_string(),
                     "y".to_string(),
                     "width".to_string(),

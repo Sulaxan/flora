@@ -8,31 +8,30 @@ use tokio::{
 
 use crate::CONTENT;
 
-use super::{protocol::{ServerRequest, ServerResponse}, PIPE_NAME_PREFIX};
+use super::{
+    create_pipe_name,
+    protocol::{ServerRequest, ServerResponse},
+};
 
-
-pub fn start_server() -> Result<()> {
+pub async fn start_server() -> Result<()> {
     let pid = std::process::id();
-    let pipe_name = format!("{PIPE_NAME_PREFIX}-{pid}");
+    println!("process id {pid}");
+    let pipe_name = create_pipe_name(pid);
     let mut server = ServerOptions::new()
         .first_pipe_instance(true)
         .create(&pipe_name)?;
 
-    tokio::spawn(async move {
-        loop {
-            server.connect().await.unwrap();
-            let connected_client = server;
+    loop {
+        server.connect().await.unwrap();
+        let connected_client = server;
 
-            // create a new server to start listening for more connections
-            server = ServerOptions::new().create(&pipe_name).unwrap();
+        // create a new server to start listening for more connections
+        server = ServerOptions::new().create(&pipe_name).unwrap();
 
-            tokio::spawn(async move {
-                handle_client(connected_client).await;
-            });
-        }
-    });
-
-    Ok(())
+        tokio::spawn(async move {
+            handle_client(connected_client).await.unwrap();
+        });
+    }
 }
 
 async fn handle_client(client: NamedPipeServer) -> Result<()> {
@@ -47,7 +46,7 @@ async fn handle_client(client: NamedPipeServer) -> Result<()> {
 
             match client.try_read(&mut data) {
                 Ok(n) => {
-                    responses.push(handle_request(serde_json::from_slice(data[0..n])?));
+                    responses.push(handle_request(serde_json::from_slice(&data[0..n])?));
                 }
                 Err(e) if e.kind() == io::ErrorKind::WouldBlock => {
                     continue;
