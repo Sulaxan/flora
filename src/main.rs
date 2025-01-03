@@ -1,6 +1,6 @@
 use std::{
     sync::{
-        atomic::{AtomicBool, AtomicI32, Ordering},
+        atomic::{AtomicBool, AtomicI32, AtomicU32, Ordering},
         Arc, Mutex,
     },
     thread,
@@ -14,8 +14,7 @@ use pipe::protocol::{ServerRequest, ServerResponse};
 use process::get_all_flora_processes;
 use tabled::{builder::Builder, settings::Style};
 use tokio::runtime;
-use webview::WebViewSender;
-use window::WidgetWindow;
+use window::{FloraHandle, FloraSender, FloraWindow};
 use windows::Win32::{
     Foundation::BOOL,
     System::{
@@ -33,7 +32,6 @@ mod color;
 mod config;
 mod pipe;
 mod process;
-mod webview;
 mod window;
 mod windows_api;
 
@@ -43,11 +41,35 @@ static WIDTH: AtomicI32 = AtomicI32::new(200);
 static HEIGHT: AtomicI32 = AtomicI32::new(20);
 static CONTENT_URL: AtomicBool = AtomicBool::new(false);
 
+static WINDOW_THREAD_ID: AtomicU32 = AtomicU32::new(0);
+
 lazy_static! {
     static ref NAME: Arc<Mutex<String>> = Arc::new(Mutex::new("Generic Flora Widget".to_string()));
     static ref CONTENT: Arc<Mutex<String>> =
         Arc::new(Mutex::new(include_str!("../default.html").to_string()));
-    static ref WEBVIEW_SENDER: Arc<Mutex<Option<WebViewSender>>> = Arc::new(Mutex::new(None));
+    static ref SENDER: Arc<Mutex<Option<FloraSender>>> = Arc::new(Mutex::new(None));
+    static ref HANDLE: Arc<Mutex<FloraHandle>> = Arc::new(Mutex::new(FloraHandle::default()));
+}
+
+fn create_window() -> Result<FloraWindow> {
+    let x = POS_X.load(Ordering::SeqCst);
+    let y = POS_Y.load(Ordering::SeqCst);
+    let width = WIDTH.load(Ordering::SeqCst);
+    let height = HEIGHT.load(Ordering::SeqCst);
+    let content = {
+        let c = CONTENT.lock().unwrap();
+        c.clone()
+    };
+    let content_url = CONTENT_URL.load(Ordering::SeqCst);
+
+    let window = FloraWindow::new(x, y, width, height, false)?;
+    if content_url {
+        window.navigate(&content);
+    } else {
+        window.navigate_to_string(&content);
+    }
+
+    Ok(window)
 }
 
 fn start_named_pipe_server() {
@@ -60,16 +82,6 @@ fn start_named_pipe_server() {
 }
 
 fn start() -> Result<()> {
-    let x = POS_X.load(Ordering::SeqCst);
-    let y = POS_Y.load(Ordering::SeqCst);
-    let width = WIDTH.load(Ordering::SeqCst);
-    let height = HEIGHT.load(Ordering::SeqCst);
-    let content = {
-        let c = CONTENT.lock().unwrap();
-        c.clone()
-    };
-    let content_url = CONTENT_URL.load(Ordering::SeqCst);
-
     let _ = unsafe { SetConsoleCtrlHandler(Some(ctrl_c_handler), true).ok() };
 
     unsafe {
@@ -77,17 +89,16 @@ fn start() -> Result<()> {
     }
     set_process_dpi_awareness()?;
 
-    let window = WidgetWindow::new(x, y, width, height)?;
-    if content_url {
-        window.webview.navigate(&content);
-    } else {
-        window.webview.navigate_to_string(&content);
-    }
-
+    let window = create_window()?;
     {
-        let mut sender = WEBVIEW_SENDER.lock().unwrap();
-        *sender = Some(window.webview.get_sender());
+        let mut handle = HANDLE.lock().unwrap();
+        *handle = window.get_window().into();
     }
+    {
+        let mut sender = SENDER.lock().unwrap();
+        *sender = Some(window.get_sender());
+    }
+    WINDOW_THREAD_ID.store(window.thread_id, Ordering::SeqCst);
 
     start_named_pipe_server();
 
@@ -230,21 +241,34 @@ fn main() -> Result<()> {
     }
 }
 
-pub fn set_process_dpi_awareness() -> Result<()> {
+fn set_process_dpi_awareness() -> Result<()> {
     unsafe { HiDpi::SetProcessDpiAwareness(HiDpi::PROCESS_PER_MONITOR_DPI_AWARE)? };
+    Ok(())
+}
+
+/// Executes a function on the webview thread.
+pub fn execute<F>(f: F) -> Result<()>
+where
+    F: FnOnce(FloraWindow) + Send + 'static,
+{
+    {
+        let s = SENDER.lock().unwrap();
+        if let Some(sender) = s.as_ref() {
+            sender.send(Box::new(f)).expect("send the function");
+        }
+    }
+
+    // notify the thread to process the function we just sent
+    windows_api::send_app_message(WINDOW_THREAD_ID.load(Ordering::SeqCst))?;
+
     Ok(())
 }
 
 pub extern "system" fn ctrl_c_handler(ctrltype: u32) -> BOOL {
     match ctrltype {
         CTRL_C_EVENT => {
-            let sender = WEBVIEW_SENDER.lock().unwrap();
-            if let Some(s) = sender.as_ref() {
-                s.send(Box::new(|_webview| unsafe {
-                    WindowsAndMessaging::PostQuitMessage(0)
-                }))
+            execute(|_| unsafe { WindowsAndMessaging::PostQuitMessage(0) })
                 .expect("send ctrl+c quit message");
-            }
 
             true.into()
         }

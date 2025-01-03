@@ -1,4 +1,4 @@
-use std::{borrow::Borrow, io};
+use std::io;
 
 use anyhow::Result;
 use tokio::{
@@ -7,8 +7,9 @@ use tokio::{
 };
 
 use crate::{
-    windows_api::{self, show_window},
-    CONTENT, NAME, WEBVIEW_SENDER,
+    execute,
+    windows_api::{self},
+    CONTENT, NAME, SENDER,
 };
 
 use super::{
@@ -87,36 +88,22 @@ fn handle_request(request: ServerRequest) -> ServerResponse {
             ServerResponse::Content(content.to_string())
         }
         ServerRequest::ShowWindow => {
-            let s = WEBVIEW_SENDER.lock().unwrap();
-            if let Some(sender) = s.as_ref() {
-                return sender
-                    .send(Box::new(|webview| {
-                        let hwnd = webview.parent.borrow();
-                        windows_api::show_window(*hwnd);
-                    }))
-                    .map_or_else(
-                        |e| ServerResponse::Err(format!("{e:?}")),
-                        |_| ServerResponse::Ok,
-                    );
-            }
-
-            return ServerResponse::Err("no window".to_string());
+            return execute(|webview| {
+                windows_api::show_window(*webview.hwnd);
+            })
+            .map_or_else(
+                |e| ServerResponse::Err(format!("{e:?}")),
+                |_| ServerResponse::Ok,
+            );
         }
         ServerRequest::HideWindow => {
-            let s = WEBVIEW_SENDER.lock().unwrap();
-            if let Some(sender) = s.as_ref() {
-                return sender
-                    .send(Box::new(|webview| {
-                        let hwnd = webview.parent.borrow();
-                        windows_api::hide_window(*hwnd);
-                    }))
-                    .map_or_else(
-                        |e| ServerResponse::Err(format!("{e:?}")),
-                        |_| ServerResponse::Ok,
-                    );
-            }
-
-            return ServerResponse::Err("no window".to_string());
+            return execute(|webview| {
+                windows_api::hide_window(*webview.hwnd);
+            })
+            .map_or_else(
+                |e| ServerResponse::Err(format!("{e:?}")),
+                |_| ServerResponse::Ok,
+            );
         }
     };
 }
