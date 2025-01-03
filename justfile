@@ -9,3 +9,6 @@ build_release:
 
 run CONFIG_PATH:
     cargo run -- -c {{CONFIG_PATH}}
+
+fmt:
+    cargo +nightly fmt
