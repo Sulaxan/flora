@@ -42,6 +42,7 @@ static HEIGHT: AtomicI32 = AtomicI32::new(20);
 static CONTENT_URL: AtomicBool = AtomicBool::new(false);
 
 lazy_static! {
+    static ref NAME: Arc<Mutex<String>> = Arc::new(Mutex::new("Generic Flora Widget".to_string()));
     static ref CONTENT: Arc<Mutex<String>> =
         Arc::new(Mutex::new(include_str!("../default.html").to_string()));
     static ref WEBVIEW_SENDER: Arc<Mutex<Option<WebViewSender>>> = Arc::new(Mutex::new(None));

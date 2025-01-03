@@ -3,11 +3,13 @@ use std::{fs, path::PathBuf, sync::atomic::Ordering};
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 
-use crate::{CONTENT, CONTENT_URL, HEIGHT, POS_X, POS_Y, WIDTH};
+use crate::{CONTENT, CONTENT_URL, HEIGHT, NAME, POS_X, POS_Y, WIDTH};
 
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct Config {
+    /// A custom name for the widget. This is used to easily identify the widget for the end user.
+    name: Option<String>,
     /// The position of the widget
     #[serde(rename = "pos")]
     position: Option<(i32, i32)>,
@@ -30,6 +32,10 @@ pub fn read(path: &PathBuf) -> Result<Config> {
 }
 
 pub fn load_config(config: Config) {
+    if let Some(name) = config.name {
+        let mut n = NAME.lock().unwrap();
+        *n = name;
+    }
     if let Some(position) = config.position {
         POS_X.store(position.0, Ordering::SeqCst);
         POS_Y.store(position.1, Ordering::SeqCst);
@@ -58,10 +64,11 @@ mod tests {
     #[test]
     fn test_print() {
         let config = Config {
+            name: Some("flora".to_string()),
             position: Some((100, 0)),
             dimension: Some((200, 0)),
             content: "".to_string(),
-            content_url: None,
+            content_url: Some(false),
         };
 
         println!("Config: {}", serde_lexpr::to_string(&config).unwrap());
@@ -74,6 +81,7 @@ mod tests {
         assert_eq!(
             config,
             Config {
+                name: None,
                 position: Some((0, 0)),
                 dimension: Some((200, 0)),
                 content: "".to_string(),

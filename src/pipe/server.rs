@@ -6,7 +6,7 @@ use tokio::{
     net::windows::named_pipe::{NamedPipeServer, ServerOptions},
 };
 
-use crate::CONTENT;
+use crate::{CONTENT, NAME};
 
 use super::{
     create_pipe_name,
@@ -75,7 +75,10 @@ async fn handle_client(client: NamedPipeServer) -> Result<()> {
 
 fn handle_request(request: ServerRequest) -> ServerResponse {
     return match request {
-        ServerRequest::GetName => ServerResponse::Name("null".to_string()),
+        ServerRequest::GetName => {
+            let name = NAME.lock().unwrap();
+            ServerResponse::Name(name.to_string())
+        }
         ServerRequest::GetContent => {
             let content = CONTENT.lock().unwrap();
             ServerResponse::Content(content.to_string())
