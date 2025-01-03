@@ -1,25 +1,23 @@
 use std::{fs, path::PathBuf, sync::atomic::Ordering};
 
 use anyhow::{Context, Result};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use crate::{CONTENT, CONTENT_URL, HEIGHT, POS_X, POS_Y, WIDTH};
 
-pub type Config = Vec<ConfigOption>;
-
-#[derive(Debug, PartialEq, Eq, Deserialize)]
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
-pub enum ConfigOption {
+pub struct Config {
     /// The position of the widget
     #[serde(rename = "pos")]
-    Position(i32, i32),
+    position: Option<(i32, i32)>,
     /// The dimensions of the widget
     #[serde(rename = "dim")]
-    Dimension(i32, i32),
+    dimension: Option<(i32, i32)>,
     /// The HTML or URL content of the widget
-    Content(String),
+    content: String,
     /// Whether to treat the content as a URL
-    ContentUrl,
+    content_url: Option<bool>,
 }
 
 pub fn parse(config: &str) -> Result<Config> {
@@ -32,43 +30,55 @@ pub fn read(path: &PathBuf) -> Result<Config> {
 }
 
 pub fn load_config(config: Config) {
-    for option in config {
-        match option {
-            ConfigOption::Position(x, y) => {
-                POS_X.store(x, Ordering::SeqCst);
-                POS_Y.store(y, Ordering::SeqCst);
-            }
-            ConfigOption::Dimension(w, h) => {
-                WIDTH.store(w, Ordering::SeqCst);
-                HEIGHT.store(h, Ordering::SeqCst);
-            }
-            ConfigOption::Content(content) => {
-                let mut c = CONTENT.lock().unwrap();
-                *c = content;
-            }
-            ConfigOption::ContentUrl => {
-                CONTENT_URL.store(true, Ordering::SeqCst);
-            }
-        }
+    if let Some(position) = config.position {
+        POS_X.store(position.0, Ordering::SeqCst);
+        POS_Y.store(position.1, Ordering::SeqCst);
+    }
+    if let Some(dim) = config.dimension {
+        WIDTH.store(dim.0, Ordering::SeqCst);
+        HEIGHT.store(dim.1, Ordering::SeqCst);
+    }
+
+    {
+        let mut c = CONTENT.lock().unwrap();
+        *c = config.content;
+    }
+
+    if let Some(_) = config.content_url {
+        CONTENT_URL.store(true, Ordering::SeqCst);
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::config::ConfigOption;
+    use crate::config::Config;
 
     use super::parse;
 
     #[test]
+    fn test_print() {
+        let config = Config {
+            position: Some((100, 0)),
+            dimension: Some((200, 0)),
+            content: "".to_string(),
+            content_url: None,
+        };
+
+        println!("Config: {}", serde_lexpr::to_string(&config).unwrap());
+    }
+
+    #[test]
     fn test_parse() {
-        let options = parse("((position 0 0)\n(dim 200 0))").unwrap();
+        let config = parse("((pos #(0 0))\n(dim #(200 0)) (content . \"\"))").unwrap();
 
         assert_eq!(
-            options,
-            vec![
-                ConfigOption::Position(0, 0),
-                ConfigOption::Dimension(200, 0)
-            ]
+            config,
+            Config {
+                position: Some((0, 0)),
+                dimension: Some((200, 0)),
+                content: "".to_string(),
+                content_url: None,
+            }
         )
     }
 }
