@@ -82,9 +82,9 @@ pub struct WebView {
     webview: Rc<ICoreWebView2>,
     tx: WebViewSender,
     rx: Rc<WebViewReceiver>,
-    thread_id: u32,
+    pub thread_id: u32,
     bindings: Rc<RefCell<BindingsMap>>,
-    parent: Rc<HWND>,
+    pub parent: Rc<HWND>,
     // either a string or url
     content: Rc<RefCell<String>>,
     // whether the content is a url

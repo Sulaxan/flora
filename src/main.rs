@@ -1,6 +1,9 @@
-use std::sync::{
-    atomic::{AtomicBool, AtomicI32, Ordering},
-    Arc, Mutex,
+use std::{
+    rc::Rc,
+    sync::{
+        atomic::{AtomicBool, AtomicI32, Ordering},
+        Arc, Mutex,
+    },
 };
 
 use anyhow::{anyhow, Result};
@@ -8,10 +11,10 @@ use clap::Parser;
 use cli::{FloraCli, FloraSubcommand};
 use lazy_static::lazy_static;
 use tabled::{builder::Builder, settings::Style};
-use webview::WebViewSender;
+use webview::{WebView, WebViewSender};
 use window::WidgetWindow;
 use windows::Win32::{
-    Foundation::BOOL,
+    Foundation::{BOOL, HWND},
     System::{
         Com::{CoInitializeEx, COINIT_APARTMENTTHREADED},
         Console::{SetConsoleCtrlHandler, CTRL_C_EVENT},
@@ -25,6 +28,7 @@ use windows::Win32::{
 mod cli;
 mod color;
 mod config;
+mod pipe;
 mod process;
 mod webview;
 mod window;

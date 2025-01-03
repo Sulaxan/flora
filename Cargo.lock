@@ -3,6 +3,21 @@
 version = 4
 
 [[package]]
+name = "addr2line"
+version = "0.24.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "dfbe277e56a376000877090da837660b4427aad530e3028d44e0bffe4f89a1c1"
+dependencies = [
+ "gimli",
+]
+
+[[package]]
+name = "adler2"
+version = "2.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "512761e0bb2578dd7380c6baaa0f4ce03e84f95e960231d1dec8bf4d7d6e2627"
+
+[[package]]
 name = "anstream"
 version = "0.6.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -38,7 +53,7 @@ version = "1.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "79947af37f4177cfead1110013d678905c37501914fba0efea834c3fe9a8d60c"
 dependencies = [
- "windows-sys",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -48,7 +63,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2109dbce0e72be3ec00bed26e6a7479ca384ad226efdd66db8fa2e3a38c83125"
 dependencies = [
  "anstyle",
- "windows-sys",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -58,10 +73,31 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "34ac096ce696dc2fcabef30516bb13c0a68a11d30131d3df6f04711467681b04"
 
 [[package]]
+name = "backtrace"
+version = "0.3.74"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8d82cb332cdfaed17ae235a638438ac4d4839913cc2af585c3c6746e8f8bee1a"
+dependencies = [
+ "addr2line",
+ "cfg-if",
+ "libc",
+ "miniz_oxide",
+ "object",
+ "rustc-demangle",
+ "windows-targets",
+]
+
+[[package]]
 name = "bytecount"
 version = "0.6.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5ce89b21cab1437276d2650d57e971f9d548a2d9037cc231abdc0562b97498ce"
+
+[[package]]
+name = "cfg-if"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 
 [[package]]
 name = "clap"
@@ -120,6 +156,7 @@ dependencies = [
  "serde-lexpr",
  "serde_json",
  "tabled",
+ "tokio",
  "webview2-com",
  "windows",
 ]
@@ -129,6 +166,12 @@ name = "fnv"
 version = "1.0.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3f9eec918d3f24069decb9af1554cad7c880e2da24a9afd88aca000531ab82c1"
+
+[[package]]
+name = "gimli"
+version = "0.31.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "07e28edb80900c19c28f1072f2e8aeca7fa06b23cd4169cefe1af5aa3260783f"
 
 [[package]]
 name = "heck"
@@ -182,10 +225,45 @@ dependencies = [
 ]
 
 [[package]]
+name = "libc"
+version = "0.2.169"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b5aba8db14291edd000dfcc4d620c7ebfb122c613afb886ca8803fa4e128a20a"
+
+[[package]]
 name = "memchr"
 version = "2.7.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "78ca9ab1a0babb1e7d5695e3530886289c18cf2f87ec19a575a0abdce112e3a3"
+
+[[package]]
+name = "miniz_oxide"
+version = "0.8.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4ffbe83022cedc1d264172192511ae958937694cd57ce297164951b8b3568394"
+dependencies = [
+ "adler2",
+]
+
+[[package]]
+name = "mio"
+version = "1.0.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2886843bf800fba2e3377cff24abf6379b4c4d5c6681eaf9ea5b0d15090450bd"
+dependencies = [
+ "libc",
+ "wasi",
+ "windows-sys 0.52.0",
+]
+
+[[package]]
+name = "object"
+version = "0.36.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "62948e14d923ea95ea2c7c86c71013138b66525b86bdc08d2dcc262bdb497b87"
+dependencies = [
+ "memchr",
+]
 
 [[package]]
 name = "papergrid"
@@ -197,6 +275,12 @@ dependencies = [
  "fnv",
  "unicode-width",
 ]
+
+[[package]]
+name = "pin-project-lite"
+version = "0.2.15"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "915a1e146535de9163f3987b8944ed8cf49a18bb0056bcebcdcece385cece4ff"
 
 [[package]]
 name = "proc-macro-error-attr2"
@@ -237,6 +321,12 @@ checksum = "0e4dccaaaf89514f546c693ddc140f729f958c247918a13380cccc6078391acc"
 dependencies = [
  "proc-macro2",
 ]
+
+[[package]]
+name = "rustc-demangle"
+version = "0.1.24"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "719b953e2095829ee67db738b3bfa9fa368c94900df327b3f07fe6e794d2fe1f"
 
 [[package]]
 name = "ryu"
@@ -284,6 +374,16 @@ dependencies = [
  "memchr",
  "ryu",
  "serde",
+]
+
+[[package]]
+name = "socket2"
+version = "0.5.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c970269d99b64e60ec3bd6ad27270092a5394c4e309314b18ae3fe575695fbe8"
+dependencies = [
+ "libc",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -358,6 +458,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "tokio"
+version = "1.42.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5cec9b21b0450273377fc97bd4c33a8acffc8c996c987a7c5b319a0083707551"
+dependencies = [
+ "backtrace",
+ "libc",
+ "mio",
+ "pin-project-lite",
+ "socket2",
+ "windows-sys 0.52.0",
+]
+
+[[package]]
 name = "unicode-ident"
 version = "1.0.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -374,6 +488,12 @@ name = "utf8parse"
 version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "06abde3611657adf66d383f00b093d7faecc7fa57071cce2578660c9f1010821"
+
+[[package]]
+name = "wasi"
+version = "0.11.0+wasi-snapshot-preview1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9c8d87e72b64a3b4db28d11ce29237c246188f4f51057d65a7eab63b7987e423"
 
 [[package]]
 name = "webview2-com"
@@ -472,6 +592,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4cd9b125c486025df0eabcb585e62173c6c9eddcec5d117d3b6e8c30e2ee4d10"
 dependencies = [
  "windows-result",
+ "windows-targets",
+]
+
+[[package]]
+name = "windows-sys"
+version = "0.52.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "282be5f36a8ce781fad8c8ae18fa3f9beff57ec1b52cb3de0789201425d9a33d"
+dependencies = [
  "windows-targets",
 ]
 

@@ -1,9 +1,12 @@
 use std::mem;
 
+use anyhow::{anyhow, Result};
 use windows::Win32::{
     Foundation::{BOOL, HWND, LPARAM, RECT},
-    UI::WindowsAndMessaging::{EnumWindows, GetClassNameW, GetWindowRect},
+    UI::WindowsAndMessaging::{EnumWindows, GetClassNameW, GetWindowLongPtrW, GetWindowRect, GWLP_USERDATA},
 };
+
+use crate::webview::WebView;
 
 #[derive(Debug)]
 pub struct FloraProcess {
