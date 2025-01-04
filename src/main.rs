@@ -15,7 +15,6 @@ use process::get_all_flora_processes;
 use tabled::{builder::Builder, settings::Style};
 use tokio::runtime;
 use tracing::info;
-use tracing_subscriber::util::SubscriberInitExt;
 use window::{FloraHandle, FloraSender, FloraWindow};
 use windows::Win32::{
     Foundation::BOOL,
@@ -273,6 +272,7 @@ where
 pub extern "system" fn ctrl_c_handler(ctrltype: u32) -> BOOL {
     match ctrltype {
         CTRL_C_EVENT => {
+            info!("received ctrl+c, sending quit message to window");
             execute(|_| unsafe { WindowsAndMessaging::PostQuitMessage(0) })
                 .expect("send ctrl+c quit message");
 

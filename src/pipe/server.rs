@@ -5,7 +5,8 @@ use tokio::{
     io::Interest,
     net::windows::named_pipe::{NamedPipeServer, ServerOptions},
 };
-use tracing::info;
+use tracing::{info, trace};
+use windows::Win32::Foundation::ERROR_PIPE_NOT_CONNECTED;
 
 use crate::{
     execute,
@@ -32,6 +33,8 @@ pub async fn start_server() -> Result<()> {
         server.connect().await.unwrap();
         let connected_client = server;
 
+        info!("client connected to named pipe");
+
         // create a new server to start listening for more connections
         server = ServerOptions::new().create(&pipe_name).unwrap();
 
@@ -52,10 +55,17 @@ async fn handle_client(client: NamedPipeServer) -> Result<()> {
             let mut data = vec![0; 1024];
 
             match client.try_read(&mut data) {
-                Ok(0) => break Ok(()),
+                Ok(0) => break,
                 Ok(n) => {
-                    responses.push(handle_request(serde_json::from_slice(&data[0..n])?));
+                    let request = serde_json::from_slice(&data[0..n])?;
+                    trace!(
+                        bytes = n,
+                        data = &data[0..n],
+                        "received request from client"
+                    );
+                    responses.push(handle_request(request));
                 }
+                Err(e) if e.raw_os_error() == Some(ERROR_PIPE_NOT_CONNECTED.0 as i32) => break,
                 Err(e) if e.kind() == io::ErrorKind::WouldBlock => {
                     continue;
                 }
@@ -69,6 +79,7 @@ async fn handle_client(client: NamedPipeServer) -> Result<()> {
             for response in responses.iter() {
                 match client.try_write(&serde_json::to_vec(response)?) {
                     Ok(_) => (),
+                    Err(e) if e.raw_os_error() == Some(ERROR_PIPE_NOT_CONNECTED.0 as i32) => break,
                     Err(e) if e.kind() == io::ErrorKind::WouldBlock => {
                         break;
                     }
@@ -79,8 +90,12 @@ async fn handle_client(client: NamedPipeServer) -> Result<()> {
             }
         }
     }
+
+    info!("client disconnected from named pipe");
+    Ok(())
 }
 
+#[tracing::instrument(level = "trace")]
 fn handle_request(request: ServerRequest) -> ServerResponse {
     return match request {
         ServerRequest::GetName => {

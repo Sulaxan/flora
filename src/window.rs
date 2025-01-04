@@ -7,6 +7,7 @@ use std::{cell::RefCell, collections::HashMap, fmt, mem, ptr, rc::Rc, sync::mpsc
 use anyhow::{anyhow, Result};
 use serde::Deserialize;
 use serde_json::Value;
+use tracing::info;
 use windows::{
     core::*,
     Win32::{
@@ -327,18 +328,21 @@ impl FloraWindow {
                 webview.remove_NavigationCompleted(token)?;
                 result.map_err(|e| anyhow!("could not navigate: {e:#?}"))?;
             }
+
+            info!(content, content_is_url = content_url, "loaded webview content");
         }
 
         let mut msg = MSG::default();
-        let h_wnd = HWND::default();
+        let hwnd = HWND::default();
 
+        info!("starting window process loop");
         loop {
             while let Ok(f) = self.rx.try_recv() {
                 (f)(self.clone());
             }
 
             unsafe {
-                let result = WindowsAndMessaging::GetMessageW(&mut msg, h_wnd, 0, 0).0;
+                let result = WindowsAndMessaging::GetMessageW(&mut msg, hwnd, 0, 0).0;
 
                 match result {
                     -1 => break Err(windows::core::Error::from_win32().into()),
