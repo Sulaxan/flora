@@ -6,7 +6,7 @@ use tokio::{
     net::windows::named_pipe::{NamedPipeServer, ServerOptions},
 };
 use tracing::{info, trace};
-use windows::Win32::Foundation::ERROR_PIPE_NOT_CONNECTED;
+use windows::Win32::Foundation::ERROR_NO_DATA;
 
 use crate::{
     execute,
@@ -65,7 +65,7 @@ async fn handle_client(client: NamedPipeServer) -> Result<()> {
                     );
                     responses.push(handle_request(request));
                 }
-                Err(e) if e.raw_os_error() == Some(ERROR_PIPE_NOT_CONNECTED.0 as i32) => break,
+                Err(e) if e.raw_os_error() == Some(ERROR_NO_DATA.0 as i32) => break,
                 Err(e) if e.kind() == io::ErrorKind::WouldBlock => {
                     continue;
                 }
@@ -79,7 +79,7 @@ async fn handle_client(client: NamedPipeServer) -> Result<()> {
             for response in responses.iter() {
                 match client.try_write(&serde_json::to_vec(response)?) {
                     Ok(_) => (),
-                    Err(e) if e.raw_os_error() == Some(ERROR_PIPE_NOT_CONNECTED.0 as i32) => break,
+                    Err(e) if e.raw_os_error() == Some(ERROR_NO_DATA.0 as i32) => break,
                     Err(e) if e.kind() == io::ErrorKind::WouldBlock => {
                         break;
                     }
