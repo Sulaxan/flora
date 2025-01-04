@@ -19,7 +19,6 @@ use super::{
     protocol::{ServerRequest, ServerResponse},
 };
 
-#[tracing::instrument]
 pub async fn start_server() -> Result<()> {
     info!("starting named pipe server");
     let pid = std::process::id();
@@ -40,6 +39,7 @@ pub async fn start_server() -> Result<()> {
 
         tokio::spawn(async move {
             handle_client(connected_client).await.unwrap();
+            info!("client disconnected from named pipe");
         });
     }
 }
@@ -55,7 +55,7 @@ async fn handle_client(client: NamedPipeServer) -> Result<()> {
             let mut data = vec![0; 1024];
 
             match client.try_read(&mut data) {
-                Ok(0) => break,
+                Ok(0) => return Ok(()),
                 Ok(n) => {
                     let request = serde_json::from_slice(&data[0..n])?;
                     trace!(
@@ -65,7 +65,7 @@ async fn handle_client(client: NamedPipeServer) -> Result<()> {
                     );
                     responses.push(handle_request(request));
                 }
-                Err(e) if e.raw_os_error() == Some(ERROR_NO_DATA.0 as i32) => break,
+                Err(e) if e.raw_os_error() == Some(ERROR_NO_DATA.0 as i32) => return Ok(()),
                 Err(e) if e.kind() == io::ErrorKind::WouldBlock => {
                     continue;
                 }
@@ -79,7 +79,7 @@ async fn handle_client(client: NamedPipeServer) -> Result<()> {
             for response in responses.iter() {
                 match client.try_write(&serde_json::to_vec(response)?) {
                     Ok(_) => (),
-                    Err(e) if e.raw_os_error() == Some(ERROR_NO_DATA.0 as i32) => break,
+                    Err(e) if e.raw_os_error() == Some(ERROR_NO_DATA.0 as i32) => return Ok(()),
                     Err(e) if e.kind() == io::ErrorKind::WouldBlock => {
                         break;
                     }
@@ -90,9 +90,6 @@ async fn handle_client(client: NamedPipeServer) -> Result<()> {
             }
         }
     }
-
-    info!("client disconnected from named pipe");
-    Ok(())
 }
 
 #[tracing::instrument(level = "trace")]
